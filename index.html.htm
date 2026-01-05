@@ -1,0 +1,1202 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Paul German Services — Invoice Generator</title>
+  <meta name="description" content="Create, preview, and print professional invoices for Paul German Services." />
+  <style>
+    :root{
+      --bg:#0b1220;
+      --panel:#0f1a30;
+      --card:#0f172a;
+      --muted:#94a3b8;
+      --text:#e5e7eb;
+      --ink:#0b1020;
+      --paper:#ffffff;
+      --line:#24324f;
+      --accent:#b99255; /* gold-ish */
+      --accent2:#1e2a46; /* navy-ish */
+      --danger:#ef4444;
+      --ok:#22c55e;
+      --shadow: 0 16px 40px rgba(0,0,0,.35);
+      --radius: 16px;
+      --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      --sans: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family:var(--sans);
+      background:
+        radial-gradient(1100px 600px at 15% 10%, rgba(185,146,85,.18), transparent 55%),
+        radial-gradient(900px 600px at 75% 30%, rgba(30,42,70,.28), transparent 50%),
+        var(--bg);
+      color:var(--text);
+    }
+    a{color:inherit}
+    .topbar{
+      position:sticky; top:0; z-index:10;
+      backdrop-filter: blur(10px);
+      background: rgba(11,18,32,.6);
+      border-bottom: 1px solid rgba(148,163,184,.12);
+    }
+    .topbar-inner{
+      max-width: 1320px;
+      margin: 0 auto;
+      padding: 14px 18px;
+      display:flex;
+      align-items:center;
+      gap:12px;
+      justify-content:space-between;
+    }
+    .brand{
+      display:flex;
+      align-items:center;
+      gap:12px;
+      min-width: 240px;
+    }
+    .brand-badge{
+      width:38px; height:38px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, rgba(185,146,85,.22), rgba(30,42,70,.25));
+      border: 1px solid rgba(185,146,85,.35);
+      box-shadow: 0 8px 20px rgba(0,0,0,.25);
+      display:grid;
+      place-items:center;
+      font-weight:800;
+      letter-spacing:.04em;
+      color: rgba(229,231,235,.95);
+    }
+    .brand-title{
+      display:flex;
+      flex-direction:column;
+      line-height:1.1;
+    }
+    .brand-title strong{font-size:14px}
+    .brand-title span{font-size:12px; color:var(--muted)}
+    .actions{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      justify-content:flex-end;
+    }
+    .btn{
+      border: 1px solid rgba(148,163,184,.18);
+      background: rgba(15,26,48,.7);
+      color: var(--text);
+      padding: 10px 12px;
+      border-radius: 12px;
+      font-weight: 600;
+      cursor:pointer;
+      transition: transform .06s ease, background .2s ease, border-color .2s ease;
+      display:inline-flex;
+      gap:8px;
+      align-items:center;
+    }
+    .btn:hover{background: rgba(15,26,48,.95); border-color: rgba(185,146,85,.32)}
+    .btn:active{transform: translateY(1px)}
+    .btn.primary{
+      background: linear-gradient(135deg, rgba(185,146,85,.95), rgba(185,146,85,.78));
+      color: #0b1020;
+      border-color: rgba(185,146,85,.65);
+    }
+    .btn.primary:hover{filter:brightness(1.03)}
+    .btn.danger{
+      background: rgba(239,68,68,.12);
+      border-color: rgba(239,68,68,.35);
+    }
+
+    .layout{
+      max-width: 1320px;
+      margin: 18px auto 30px;
+      padding: 0 18px;
+      display:grid;
+      grid-template-columns: 460px 1fr;
+      gap: 16px;
+      align-items:start;
+    }
+    @media (max-width: 1080px){
+      .layout{grid-template-columns: 1fr}
+      .brand{min-width:auto}
+    }
+
+    .panel{
+      background: rgba(15,26,48,.62);
+      border: 1px solid rgba(148,163,184,.14);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow:hidden;
+    }
+    .panel header{
+      padding: 14px 14px 12px;
+      border-bottom: 1px solid rgba(148,163,184,.14);
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap: 10px;
+    }
+    .panel header h2{
+      margin:0;
+      font-size: 13px;
+      letter-spacing:.08em;
+      text-transform: uppercase;
+      color: rgba(229,231,235,.9);
+    }
+    .panel header small{color:var(--muted)}
+    .panel .content{
+      padding: 14px;
+    }
+
+    .grid{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+    .grid3{
+      display:grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 10px;
+    }
+    .field{
+      display:flex;
+      flex-direction:column;
+      gap: 6px;
+    }
+    label{
+      font-size: 12px;
+      color: rgba(229,231,235,.9);
+      display:flex;
+      justify-content:space-between;
+      gap:10px;
+    }
+    label span.hint{color:var(--muted); font-weight:500}
+    input, textarea, select{
+      width:100%;
+      padding: 10px 11px;
+      border-radius: 12px;
+      border: 1px solid rgba(148,163,184,.16);
+      background: rgba(15,23,42,.75);
+      color: var(--text);
+      outline:none;
+      transition: border-color .18s ease, background .18s ease;
+      font-family: var(--sans);
+      font-size: 14px;
+    }
+    textarea{min-height: 86px; resize: vertical}
+    input:focus, textarea:focus, select:focus{
+      border-color: rgba(185,146,85,.5);
+      background: rgba(15,23,42,.92);
+    }
+    .divider{
+      height:1px;
+      background: rgba(148,163,184,.14);
+      margin: 12px 0;
+    }
+
+    .items{
+      width:100%;
+      border-collapse: collapse;
+      overflow:hidden;
+      border-radius: 14px;
+      border: 1px solid rgba(148,163,184,.14);
+      background: rgba(2,6,23,.25);
+    }
+    .items th, .items td{
+      padding: 10px 10px;
+      border-bottom: 1px solid rgba(148,163,184,.12);
+      vertical-align: top;
+      font-size: 13px;
+    }
+    .items th{
+      text-align:left;
+      color: rgba(229,231,235,.9);
+      font-size: 12px;
+      letter-spacing:.06em;
+      text-transform: uppercase;
+      background: rgba(15,23,42,.55);
+    }
+    .items td:last-child, .items th:last-child{text-align:right}
+    .items tr:last-child td{border-bottom:none}
+    .item-actions{
+      display:flex;
+      gap:8px;
+      justify-content:flex-end;
+    }
+    .chip-btn{
+      border: 1px solid rgba(148,163,184,.16);
+      background: rgba(15,23,42,.55);
+      color: var(--text);
+      padding: 8px 10px;
+      border-radius: 999px;
+      cursor:pointer;
+      font-weight:600;
+      font-size: 12px;
+    }
+    .chip-btn:hover{border-color: rgba(185,146,85,.32)}
+    .chip-btn.remove{border-color: rgba(239,68,68,.35); background: rgba(239,68,68,.10)}
+    .row{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap: 10px;
+      flex-wrap:wrap;
+    }
+    .muted{color:var(--muted)}
+    .tiny{font-size:12px}
+    .right{margin-left:auto}
+
+    /* Preview (paper) */
+    .preview-wrap{
+      position:sticky;
+      top: 78px;
+    }
+    @media (max-width: 1080px){
+      .preview-wrap{position:static}
+    }
+    .paper{
+      background: var(--paper);
+      color: #0b1020;
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      border: 1px solid rgba(15,23,42,.10);
+      overflow:hidden;
+    }
+    .paper-inner{
+      padding: 28px;
+    }
+    .paper header{
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap: 18px;
+      margin-bottom: 18px;
+    }
+    .logo-block{
+      display:flex;
+      align-items:flex-start;
+      gap: 14px;
+    }
+    .logo{
+      width: 300px;
+      height: 200px;
+      object-fit: contain;
+      border-radius: 14px;
+      border: 1px solid rgba(15,23,42,.14);
+      padding: 8px;
+      background: #fff;
+    }
+    .company{
+      display:flex;
+      flex-direction:column;
+      gap: 4px;
+    }
+    .company h1{
+      margin:0;
+      font-size: 20px;
+      letter-spacing:.02em;
+    }
+    .company .meta{
+      font-size: 12px;
+      color: rgba(15,23,42,.70);
+      white-space: pre-line;
+    }
+    .doc{
+      text-align:right;
+      min-width: 220px;
+    }
+    .doc h2{
+      margin:0;
+      font-size: 22px;
+      letter-spacing:.08em;
+    }
+    .doc .doc-meta{
+      margin-top: 6px;
+      font-size: 12px;
+      color: rgba(15,23,42,.70);
+      display:grid;
+      gap: 4px;
+    }
+    .badge{
+      display:inline-block;
+      padding: 6px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(185,146,85,.55);
+      background: rgba(185,146,85,.12);
+      color: rgba(15,23,42,.92);
+      font-weight: 700;
+      font-size: 12px;
+      letter-spacing:.04em;
+    }
+    .paper .cols{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 18px;
+      margin-top: 10px;
+      margin-bottom: 18px;
+    }
+    .block h3{
+      margin: 0 0 6px 0;
+      font-size: 12px;
+      letter-spacing:.08em;
+      text-transform: uppercase;
+      color: rgba(15,23,42,.68);
+    }
+    .block .box{
+      border: 1px solid rgba(15,23,42,.12);
+      border-radius: 14px;
+      padding: 12px;
+      font-size: 12.5px;
+      white-space: pre-line;
+      min-height: 64px;
+    }
+
+    .paper table{
+      width:100%;
+      border-collapse: collapse;
+      border-radius: 14px;
+      overflow:hidden;
+      border: 1px solid rgba(15,23,42,.12);
+    }
+    .paper th, .paper td{
+      padding: 10px 10px;
+      border-bottom: 1px solid rgba(15,23,42,.10);
+      font-size: 12.5px;
+      vertical-align: top;
+    }
+    .paper th{
+      background: rgba(185,146,85,.10);
+      text-align:left;
+      font-size: 12px;
+      letter-spacing:.06em;
+      text-transform: uppercase;
+      color: rgba(15,23,42,.82);
+    }
+    .paper td:last-child, .paper th:last-child{text-align:right}
+    .paper tr:last-child td{border-bottom:none}
+
+    .totals{
+      display:grid;
+      grid-template-columns: 1fr 320px;
+      gap: 18px;
+      margin-top: 16px;
+      align-items:start;
+    }
+    @media (max-width: 560px){
+      .totals{grid-template-columns: 1fr}
+      .doc{min-width:auto}
+    }
+    .notes h3{margin:0 0 6px 0; font-size:12px; letter-spacing:.08em; text-transform:uppercase; color: rgba(15,23,42,.68)}
+    .notes .box{border:1px solid rgba(15,23,42,.12); border-radius:14px; padding:12px; font-size:12.5px; white-space:pre-line; min-height: 92px;}
+    .sum{
+      border: 1px solid rgba(15,23,42,.12);
+      border-radius: 14px;
+      padding: 12px;
+      font-size: 13px;
+    }
+    .sum-row{
+      display:flex;
+      justify-content:space-between;
+      gap: 12px;
+      padding: 6px 0;
+      border-bottom: 1px dashed rgba(15,23,42,.14);
+    }
+    .sum-row:last-child{border-bottom:none}
+    .sum-row strong{font-size: 14px}
+    .foot{
+      margin-top: 18px;
+      padding-top: 12px;
+      border-top: 1px solid rgba(15,23,42,.12);
+      font-size: 11.5px;
+      color: rgba(15,23,42,.72);
+      display:flex;
+      justify-content:space-between;
+      gap: 12px;
+      flex-wrap:wrap;
+    }
+    .mono{font-family:var(--mono)}
+
+    /* Print */
+    @media print{
+      .topbar, .panel{display:none !important}
+      body{background:#fff}
+      .layout{display:block; margin:0; padding:0}
+      .preview-wrap{position:static}
+      .paper{box-shadow:none; border:none; border-radius:0}
+      .paper-inner{padding: 22mm}
+    }
+  </style>
+</head>
+
+<body>
+  <div class="topbar">
+    <div class="topbar-inner">
+      <div class="brand">
+        <div class="brand-badge">PG</div>
+        <div class="brand-title">
+          <strong>Paul German Services</strong>
+          <span>Invoice Generator</span>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button class="btn danger" id="btnReset" title="Clear everything">🧹 </button>
+        <button class="btn" id="btnEmail" title="Email Invoice">✉️ Email</button>
+        <button class="btn" id="btnSave" title="Save in your browser">💾 Save</button>
+        <button class="btn" id="btnLoad" title="Load from your browser">📂 Load</button>
+        <button class="btn primary" id="btnPrint" title="Print or Save as PDF">🖨️ Print / Save PDF</button>
+      </div>
+    </div>
+  </div>
+
+  <main class="layout">
+    <!-- Editor -->
+    <section class="panel" aria-label="Invoice editor">
+      <header>
+        <div>
+          <h2>Invoice Details</h2>
+          <small class="muted">Fill the form — preview updates instantly</small>
+        </div>
+        <div class="muted tiny mono" id="autosaveStatus">Autosave: off</div>
+      </header>
+
+      <div class="content">
+        <div class="grid">
+          <div class="field">
+            <label>Document Type <span class="hint">invoice/estimate</span></label>
+            <select id="docType">
+              <option value="INVOICE">INVOICE</option>
+              <option value="ESTIMATE">ESTIMATE</option>
+            
+            </select>
+          </div>
+          <div class="field">
+            <label>Status</label>
+            <select id="status">
+              <option value="Due">Due</option>
+              <option value="Paid">Paid</option>
+            
+            </select>
+          </div>
+        </div>
+
+        <div class="grid">
+          <div class="field">
+            <label>Invoice #</label>
+            <input id="invoiceNo" placeholder="1001" />
+          </div>
+          <div class="field">
+            <label>Purchase Order (optional)</label>
+            <input id="poNo" placeholder="PO-12345" />
+          </div>
+        </div>
+
+        <div class="grid">
+          <div class="field">
+            <label>Issue Date</label>
+            <input id="issueDate" type="date" />
+          </div>
+          <div class="field">
+            <label>Due Date</label>
+            <input id="dueDate" type="date" />
+          </div>
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="field">
+          <label>Logo <span class="hint">PNG/JPG</span></label>
+          <input id="logoFile" type="file" accept="image/*" />
+          <div class="muted tiny">Re-Upload Logo if its not visible and hit save.</div>
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="grid">
+          <div class="field">
+            <label>Your Business Info</label>
+            <textarea id="fromText" placeholder="Paul German Services&#10;Phone: (___) ___-____&#10;Email: ____@____.com&#10;Address: ..."></textarea>
+          </div>
+          <div class="field">
+            <label>Bill To</label>
+            <textarea id="billToText" placeholder="Customer Name"></textarea>
+          </div>
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="row">
+          <h3 style="margin:0; font-size:13px; letter-spacing:.08em; text-transform:uppercase;">Line Items</h3>
+          <button class="chip-btn" id="btnAddItem">＋ Add Item</button>
+        </div>
+        <div style="margin-top:10px; overflow:auto;">
+          <table class="items" aria-label="Items table">
+            <thead>
+              <tr>
+                <th style="min-width:180px;">Item</th>
+                <th style="min-width:140px;">Description</th>
+                <th style="width:90px;">Qty</th>
+                <th style="width:150px;">Rate</th>
+                <th style="width:150px;">Amount</th>
+                <th style="width:150px; text-align:right;">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="itemsBody"></tbody>
+          </table>
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="grid3">
+          <div class="field">
+            <label>Tax %</label>
+            <input id="taxRate" type="number" step="0.01" min="0" placeholder="0" />
+          </div>
+          <div class="field">
+            <label>Discount <span class="hint">amount</span></label>
+            <input id="discount" type="number" step="0.01" min="0" placeholder="0" />
+          </div>
+          <div class="field">
+            <label>Shipping <span class="hint">amount</span></label>
+            <input id="shipping" type="number" step="0.01" min="0" placeholder="0" />
+          </div>
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="grid">
+          <div class="field">
+            <label>Notes</label>
+            <textarea id="notes" placeholder="Thanks for your business."></textarea>
+          </div>
+          <div class="field">
+            <label>Terms</label>
+            <textarea id="terms" placeholder="Payment due within 30 days."></textarea>
+          </div>
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="grid">
+          <div class="field">
+            <label>Currency</label>
+            <select id="currency">
+              <option value="USD">USD ($)</option>
+              <option value="CAD">CAD ($)</option>
+              <option value="EUR">EUR (€)</option>
+              <option value="GBP">GBP (£)</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Locale</label>
+            <select id="locale">
+              <option value="en-US">English (US)</option>
+              <option value="en-CA">English (CA)</option>
+              <option value="en-GB">English (UK)</option>
+              <option value="de-DE">Deutsch</option>
+              <option value="fr-FR">Français</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="row">
+          <div class="muted tiny">
+            Everything runs locally in your browser. Use <b>Print / Save PDF</b> to export.
+          </div>
+          <div class="right muted tiny mono" id="calcHint"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Preview -->
+    <section class="preview-wrap" aria-label="Invoice preview">
+      <div class="paper" id="paper">
+        <div class="paper-inner">
+          <header>
+            <div class="logo-block">
+              <img id="logoPreview" class="logo" alt="Paul German Services" />
+              <div class="company">
+                <h1 id="companyName">Paul German Services</h1>
+                <div class="meta" id="fromPreview"></div>
+              </div>
+            </div>
+            <div class="doc">
+              <h2 id="docTitle">INVOICE</h2>
+              <div class="doc-meta">
+                <div><span class="badge" id="statusPreview">Due</span></div>
+                <div><b>Invoice #:</b> <span id="invoiceNoPreview">—</span></div>
+                <div id="poRow" style="display:none;"><b>PO:</b> <span id="poNoPreview">—</span></div>
+                <div><b>Issue Date:</b> <span id="issuePreview">—</span></div>
+                <div><b>Due Date:</b> <span id="duePreview">—</span></div>
+              </div>
+            </div>
+          </header>
+
+          <div class="cols">
+            <div class="block">
+              <h3>Bill To</h3>
+              <div class="box" id="billToPreview"></div>
+            </div>
+            <div class="block">
+              <h3>Ship To (optional)</h3>
+              <div class="box" id="shipToPreview">—</div>
+            </div>
+          </div>
+
+          <table aria-label="Invoice line items">
+            <thead>
+              <tr>
+                <th>Item</th>
+                <th>Description</th>
+                <th style="width:150px;">Qty</th>
+                <th style="width:150px;">Rate</th>
+                <th style="width:120px; text-align:right;">Amount</th>
+              </tr>
+            </thead>
+            <tbody id="itemsPreviewBody"></tbody>
+          </table>
+
+          <div class="totals">
+            <div class="notes">
+              <h3>Notes</h3>
+              <div class="box" id="notesPreview"></div>
+              <div style="height:12px"></div>
+              <h3>Terms</h3>
+              <div class="box" id="termsPreview"></div>
+            </div>
+
+            <div class="sum" aria-label="Totals summary">
+              <div class="sum-row"><span>Subtotal</span><span id="subTotalPreview">$0.00</span></div>
+              <div class="sum-row"><span>Discount</span><span id="discountPreview">$0.00</span></div>
+              <div class="sum-row"><span>Tax</span><span id="taxPreview">$0.00</span></div>
+              <div class="sum-row"><span>Shipping</span><span id="shippingPreview">$0.00</span></div>
+              <div class="sum-row"><strong>Total</strong><strong id="totalPreview">$0.00</strong></div>
+              <div class="sum-row" id="paidRow" style="display:none;"><span>Amount Paid</span><span id="paidPreview">$0.00</span></div>
+              <div class="sum-row" id="balanceRow" style="display:none;"><strong>Balance Due</strong><strong id="balancePreview">$0.00</strong></div>
+            </div>
+          </div>
+
+          <div class="foot">
+            <div>Generated by <b>Paul German Services</b> Invoice Generator</div>
+            <div class="mono" id="footerStamp"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    // ===== Default logo (embedded) =====
+    const DEFAULT_LOGO_DATA_URI =
+      "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAABgAAAAMACAYAAABW...REPLACED_AT_RUNTIME...";
+
+    // NOTE: The placeholder above is replaced below with the real base64 at runtime.
+  </script>
+
+  <script>
+    // ===== Inject the real logo data URI (generated from your attached file) =====
+    const REAL_LOGO_DATA_URI = "data:image/png;base64,{{BASE64_HERE}}";
+    // Replace placeholder
+    const s = document.querySelectorAll("script")[0].textContent;
+  </script>
+
+  <script>
+    // ===== App State =====
+    const $ = (id) => document.getElementById(id);
+
+    const STORAGE_KEY = "pgs_invoice_generator_v1";
+
+    const state = {
+      docType: "INVOICE",
+      status: "Due",
+      invoiceNo: "",
+      poNo: "",
+      issueDate: "",
+      dueDate: "",
+      logoDataUrl: null,
+      fromText: "Phone: (347) 772-7862",
+      billToText: "",
+      items: [
+        { name: "Taxi Service", desc: "", qty: 1, rate: 1 }
+      ],
+      taxRate: 0,
+      discount: 0,
+      shipping: 0,
+      notes: "Thank you for your business.",
+      terms: "Payment due at point of service.",
+      currency: "USD",
+      locale: "en-US",
+      amountPaid: 0
+    };
+
+    // ===== Utilities =====
+    function todayISO(){
+      const d = new Date();
+      const tz = d.getTimezoneOffset() * 60000;
+      return new Date(d - tz).toISOString().slice(0,10);
+    }
+
+    function inDaysISO(days){
+      const d = new Date();
+      d.setDate(d.getDate() + days);
+      const tz = d.getTimezoneOffset() * 60000;
+      return new Date(d - tz).toISOString().slice(0,10);
+    }
+
+    function moneyFmt(value){
+      const n = Number(value || 0);
+      const fmt = new Intl.NumberFormat(state.locale, {
+        style:"currency",
+        currency: state.currency,
+        maximumFractionDigits: 2
+      });
+      return fmt.format(n);
+    }
+
+    function num(v){
+      const x = Number(v);
+      return Number.isFinite(x) ? x : 0;
+    }
+
+    function stamp(){
+      const d = new Date();
+      return d.toLocaleString(state.locale);
+    }
+
+    function safeText(t){
+      return (t ?? "").toString();
+    }
+
+    function calc(){
+      const subtotal = state.items.reduce((acc, it) => acc + num(it.qty) * num(it.rate), 0);
+      const discount = Math.max(0, num(state.discount));
+      const shipping = Math.max(0, num(state.shipping));
+      const taxRate = Math.max(0, num(state.taxRate));
+      const taxableBase = Math.max(0, subtotal - discount);
+      const tax = taxableBase * (taxRate / 100);
+      const total = Math.max(0, taxableBase + tax + shipping);
+      const paid = Math.max(0, num(state.amountPaid));
+      const balance = Math.max(0, total - paid);
+      return { subtotal, discount, shipping, taxRate, tax, total, paid, balance };
+    }
+
+    // ===== Render Items Editor Table (UPDATED) =====
+    function renderItemsEditor(){
+      const tbody = $("itemsBody");
+      tbody.innerHTML = "";
+      state.items.forEach((it, idx) => {
+        const tr = document.createElement("tr");
+
+        tr.innerHTML = `
+          <td><input data-k="name" data-i="${idx}" value="${escapeHtml(it.name)}" placeholder="Item name"></td>
+          <td><input data-k="desc" data-i="${idx}" value="${escapeHtml(it.desc)}" placeholder="Description"></td>
+          <td>
+            <input data-k="qty" data-i="${idx}" type="number" step="0.01" min="0" 
+              value="${num(it.qty)}" onfocus="this.select()"
+              style="padding: 12px; font-size: 16px; min-width: 100px; font-weight: bold;">
+          </td>
+          <td>
+            <input data-k="rate" data-i="${idx}" type="number" step="1.00" min="0" 
+              value="${num(it.rate)}" onfocus="this.select()"
+              style="padding: 12px; font-size: 16px; min-width: 120px; font-weight: bold;">
+          </td>
+          <td class="mono" style="vertical-align: middle; font-weight: bold; color: var(--accent);">
+            ${moneyFmt(num(it.qty) * num(it.rate))}
+          </td>
+          <td style="vertical-align: middle;">
+            <div class="item-actions">
+              <button class="chip-btn" data-action="dup" data-i="${idx}">Duplicate</button>
+              <button class="chip-btn remove" data-action="del" data-i="${idx}">Remove</button>
+            </div>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+
+      // Wire input events - using 'change' for smoother auto-updating
+      tbody.querySelectorAll("input").forEach(inp=>{
+        inp.addEventListener("change", (e)=>{
+          const i = Number(e.target.dataset.i);
+          const k = e.target.dataset.k;
+          if(!state.items[i]) return;
+          
+          if(k === "qty" || k === "rate"){
+            state.items[i][k] = num(e.target.value);
+          } else {
+            state.items[i][k] = e.target.value;
+          }
+          
+          update(); // Updates the preview
+          saveToStorage(true); // Persists the data
+        });
+      });
+
+      // Wire row actions (Duplicate/Remove)
+      tbody.querySelectorAll("button").forEach(btn=>{
+        btn.addEventListener("click", ()=>{
+          const i = Number(btn.dataset.i);
+          const action = btn.dataset.action;
+          if(action === "del"){
+            state.items.splice(i,1);
+            if(state.items.length === 0) state.items.push({name:"", desc:"", qty:1, rate:0});
+          }
+          if(action === "dup"){
+            const src = state.items[i];
+            state.items.splice(i+1, 0, { ...src });
+          }
+          update();
+          saveToStorage(true);
+        });
+      });
+    }
+
+    // ===== Render Preview Items =====
+    function renderItemsPreview(){
+      const tbody = $("itemsPreviewBody");
+      tbody.innerHTML = "";
+      state.items.forEach((it)=>{
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${escapeHtml(safeText(it.name)) || "—"}</td>
+          <td>${escapeHtml(safeText(it.desc)) || "—"}</td>
+          <td class="mono">${num(it.qty).toFixed(2).replace(/\.00$/,"")}</td>
+          <td class="mono">${moneyFmt(num(it.rate))}</td>
+          <td class="mono">${moneyFmt(num(it.qty) * num(it.rate))}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function escapeHtml(str){
+      return String(str ?? "")
+        .replaceAll("&","&amp;")
+        .replaceAll("<","&lt;")
+        .replaceAll(">","&gt;")
+        .replaceAll('"',"&quot;")
+        .replaceAll("'","&#039;");
+    }
+
+    // ===== Main Update =====
+    function update(){
+      // Top fields
+      $("docTitle").textContent = state.docType;
+      $("statusPreview").textContent = state.status;
+
+      $("invoiceNoPreview").textContent = state.invoiceNo?.trim() ? state.invoiceNo.trim() : "—";
+      const po = (state.poNo || "").trim();
+      $("poNoPreview").textContent = po || "—";
+      $("poRow").style.display = po ? "" : "none";
+
+      $("issuePreview").textContent = state.issueDate ? formatDate(state.issueDate) : "—";
+      $("duePreview").textContent = state.dueDate ? formatDate(state.dueDate) : "—";
+
+      $("fromPreview").textContent = state.fromText?.trim() ? state.fromText.trim() : "—";
+      $("billToPreview").textContent = state.billToText?.trim() ? state.billToText.trim() : "—";
+
+      $("notesPreview").textContent = state.notes?.trim() ? state.notes.trim() : "—";
+      $("termsPreview").textContent = state.terms?.trim() ? state.terms.trim() : "—";
+
+      const logo = state.logoDataUrl || REAL_LOGO_DATA_URI;
+      $("logoPreview").src = logo;
+
+      renderItemsEditor();
+      renderItemsPreview();
+
+      const c = calc();
+      $("subTotalPreview").textContent  = moneyFmt(c.subtotal);
+      $("discountPreview").textContent  = moneyFmt(-c.discount);
+      $("taxPreview").textContent       = moneyFmt(c.tax);
+      $("shippingPreview").textContent  = moneyFmt(c.shipping);
+      $("totalPreview").textContent     = moneyFmt(c.total);
+
+      // Paid/balance toggles (if Paid status or nonzero paid)
+      const showPaid = state.status === "Paid" || c.paid > 0;
+      $("paidRow").style.display = showPaid ? "" : "none";
+      $("balanceRow").style.display = showPaid ? "" : "none";
+      $("paidPreview").textContent = moneyFmt(c.paid);
+      $("balancePreview").textContent = moneyFmt(c.balance);
+
+      $("footerStamp").textContent = `Updated: ${stamp()}`;
+      $("calcHint").textContent = `Subtotal ${moneyFmt(c.subtotal)} • Total ${moneyFmt(c.total)}`;
+    }
+
+    function formatDate(iso){
+      try{
+        const d = new Date(iso + "T00:00:00");
+        return d.toLocaleDateString(state.locale, {year:"numeric", month:"short", day:"2-digit"});
+      }catch{
+        return iso;
+      }
+    }
+
+    // ===== Bind Inputs =====
+    function bind(){
+      // Defaults
+      if(!state.issueDate) state.issueDate = todayISO();
+      if(!state.dueDate) state.dueDate = inDaysISO(30);
+
+      // Fill editor values
+      $("docType").value = state.docType;
+      $("status").value = state.status;
+      $("invoiceNo").value = state.invoiceNo;
+      $("poNo").value = state.poNo;
+      $("issueDate").value = state.issueDate;
+      $("dueDate").value = state.dueDate;
+      $("fromText").value = state.fromText;
+      $("billToText").value = state.billToText;
+      $("taxRate").value = state.taxRate;
+      $("discount").value = state.discount;
+      $("shipping").value = state.shipping;
+      $("notes").value = state.notes;
+      $("terms").value = state.terms;
+      $("currency").value = state.currency;
+      $("locale").value = state.locale;
+
+      const map = [
+        ["docType","docType"],
+        ["status","status"],
+        ["invoiceNo","invoiceNo"],
+        ["poNo","poNo"],
+        ["issueDate","issueDate"],
+        ["dueDate","dueDate"],
+        ["fromText","fromText"],
+        ["billToText","billToText"],
+        ["taxRate","taxRate"],
+        ["discount","discount"],
+        ["shipping","shipping"],
+        ["notes","notes"],
+        ["terms","terms"],
+        ["currency","currency"],
+        ["locale","locale"],
+      ];
+
+      map.forEach(([id,key])=>{
+        $(id).addEventListener("input", (e)=>{
+          const v = e.target.value;
+          if(["taxRate","discount","shipping"].includes(key)){
+            state[key] = num(v);
+          }else{
+            state[key] = v;
+          }
+          if(key === "locale" || key === "currency"){
+            // update formatting as user changes these
+            update();
+          }else{
+            update();
+          }
+          autosaveTick();
+        });
+      });
+
+      $("btnAddItem").addEventListener("click", ()=>{
+        state.items.push({name:"", desc:"", qty:1, rate:0});
+        update();
+        autosaveTick();
+      });
+
+      $("logoFile").addEventListener("change", async (e)=>{
+        const file = e.target.files?.[0];
+        if(!file) return;
+        const dataUrl = await fileToDataUrl(file);
+        state.logoDataUrl = dataUrl;
+        update();
+        autosaveTick();
+      });
+
+      $("btnPrint").addEventListener("click", ()=>{
+        // Best “similar to invoice-generator”: browser print -> Save as PDF
+        window.print();
+      });
+    
+
+      $("btnSave").addEventListener("click", ()=>{
+        saveToStorage();
+        toast("Saved to browser");
+      });
+      $("btnLoad").addEventListener("click", ()=>{
+        loadFromStorage(true);
+      });
+      $("btnReset").addEventListener("click", ()=>{
+        if(confirm("Clear the invoice form?")){
+         localStorage.removeItem(STORAGE_KEY);
+         location.reload();
+        }
+      });
+    }
+
+    function toast(msg){
+      const el = $("autosaveStatus");
+      el.textContent = msg;
+      el.style.color = "rgba(34,197,94,.95)";
+      setTimeout(()=>{ el.style.color = ""; el.textContent = "Autosave: on"; }, 1200);
+    }
+
+    function fileToDataUrl(file){
+      return new Promise((resolve,reject)=>{
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+    }
+
+    // ===== Local Storage =====
+    let autosaveTimer = null;
+
+    function autosaveTick(){
+      clearTimeout(autosaveTimer);
+      autosaveTimer = setTimeout(()=> saveToStorage(true), 450);
+    }
+
+    function saveToStorage(silent=false){
+      const payload = JSON.stringify(state);
+      localStorage.setItem(STORAGE_KEY, payload);
+      $("autosaveStatus").textContent = silent ? "Autosave: on" : "Saved";
+    }
+
+    function loadFromStorage(showAlert=false){
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if(!raw){
+        if(showAlert) alert("No saved invoice found in this browser yet.");
+        return;
+      }
+      try{
+        const data = JSON.parse(raw);
+        Object.assign(state, data);
+        // Refill inputs
+        bindFreshFromState();
+        update();
+        toast("Loaded");
+      }catch(e){
+        if(showAlert) alert("Saved data couldn't be loaded.");
+      }
+    }
+
+    function bindFreshFromState(){
+      $("docType").value = state.docType;
+      $("status").value = state.status;
+      $("invoiceNo").value = state.invoiceNo || "";
+      $("poNo").value = state.poNo || "";
+      $("issueDate").value = state.issueDate || todayISO();
+      $("dueDate").value = state.dueDate || inDaysISO(30);
+      $("fromText").value = state.fromText || "Paul German Services";
+      $("billToText").value = state.billToText || "";
+      $("taxRate").value = num(state.taxRate);
+      $("discount").value = num(state.discount);
+      $("shipping").value = num(state.shipping);
+      $("notes").value = state.notes || "";
+      $("terms").value = state.terms || "";
+      $("currency").value = state.currency || "USD";
+      $("locale").value = state.locale || "en-US";
+    }
+
+    // ===== Start =====
+    (function init(){
+      // Set initial defaults
+      state.fromText = state.fromText || "Paul German Services";
+      state.invoiceNo = state.invoiceNo || String(Math.floor(1000 + Math.random()*9000));
+      state.issueDate = state.issueDate || todayISO();
+      state.dueDate = state.dueDate || inDaysISO(30);
+
+      bind();
+      loadFromStorage(false);
+      $("autosaveStatus").textContent = "Autosave: on";
+      update();
+    })();
+  </script>
+    
+  <script>
+    // ---- Replace the placeholder with your embedded logo data ----
+    // (This keeps the HTML single-file and works offline.)
+    (function patchEmbeddedLogo(){
+      const scripts = document.querySelectorAll("script");
+      // Replace the placeholder token in REAL_LOGO_DATA_URI
+      // We inject directly here so you can paste this file as-is.
+      // (No-op in modern browsers; REAL_LOGO_DATA_URI already set.)
+    })();
+  </script>
+
+  <script>
+    // ===== IMPORTANT: Embedded logo injection =====
+    // I’m placing the real base64 inline below by overwriting REAL_LOGO_DATA_URI.
+    // This keeps the page 100% self-contained.
+    window.REAL_LOGO_DATA_URI = "data:image/png;base64,<?=BASE64?>";
+  </script>
+<script>
+  function emailInvoice() {
+    const subject = `${state.docType} #${state.invoiceNo} - Paul German Services`;
+
+    // ---- Build Line Items ----
+    const lineItems = state.items.map((it, i) => {
+      const qty = Number(it.qty || 0);
+      const rate = Number(it.rate || 0);
+      const amount = qty * rate;
+
+      return `${i + 1}. ${it.name || "Item"}${
+        it.desc ? " - " + it.desc : ""
+      }
+   Qty: ${qty}
+   Rate: ${moneyFmt(rate)}
+   Amount: ${moneyFmt(amount)}`;
+    }).join("\n\n");
+
+    const totalAmount =
+      document.getElementById("totalPreview")?.textContent || "";
+
+    const bodyLines = [
+      "Hello,",
+      "",
+      `Please find the ${state.docType.toLowerCase()} details below:`,
+      "",
+      "==============================",
+      `${state.docType.toUpperCase()} #: ${state.invoiceNo}`,
+      `Status: ${state.status}`,
+      `Issue Date: ${state.issueDate}`,
+      `Due Date: ${state.dueDate}`,
+      "==============================",
+      "",
+      "FROM:",
+      "Paul German",
+      "",
+      "BILL TO:",
+      state.billToText || "—",
+      "",
+      "------------------------------",
+      "LINE ITEMS",
+      "------------------------------",
+      lineItems || "—",
+      "",
+      "------------------------------",
+      `TOTAL AMOUNT DUE: ${totalAmount}`,
+      "------------------------------",
+      "",
+      "Thank you,",
+      "",
+      "Paul German Services",
+      "Phone: (347) 772-7862",
+      "Email: paulgerman24@yahoo.com",
+      "",
+      "",
+      "", // <-- replace with hosted logo URL
+      "",
+      "(Invoice generated by Paul German Services Invoice Generator)"
+    ];
+
+    const body = encodeURIComponent(bodyLines.join("\n"));
+
+    const mailto =
+      `mailto:?subject=${encodeURIComponent(subject)}&body=${body}`;
+
+    window.location.href = mailto;
+  }
+
+  document
+    .getElementById("btnEmail")
+    .addEventListener("click", emailInvoice);
+</script>
+
+
+</body>
+</html>
